@@ -1,47 +1,63 @@
 class Solution {
     public List<String> maxNumOfSubstrings(String s) {
         int n = s.length();
+
+        // Store first and last occurrence of each character.
         int[][] intervals = new int[26][2];
+
         for (int i = 0; i < 26; i++) {
             intervals[i][0] = n;
+            intervals[i][1] = -1;
         }
+
         for (int i = 0; i < n; i++) {
-            char c = s.charAt(i);
-            intervals[c - 'a'][0] = Math.min(intervals[c - 'a'][0], i);
-            intervals[c - 'a'][1] = Math.max(intervals[c - 'a'][1], i);
+            int c = s.charAt(i) - 'a';
+            intervals[c][0] = Math.min(intervals[c][0], i);
+            intervals[c][1] = i;
         }
-        
-        List<int[]> list = new ArrayList<>();
-        for (int i = 0; i < 26; i++) {
-            if (intervals[i][0] < n) {
-                int left = intervals[i][0], right = intervals[i][1];
-                int minLeft = left, maxRight = right;
-                for (int j = minLeft; j <= maxRight; j++) { // dynamically change the stop condition
-                    minLeft = Math.min(minLeft, intervals[s.charAt(j) - 'a'][0]);
-                    maxRight = Math.max(maxRight, intervals[s.charAt(j) - 'a'][1]);
+
+        // Generate all valid intervals.
+        List<int[]> candidates = new ArrayList<>();
+
+        for (int c = 0; c < 26; c++) {
+            if (intervals[c][1] == -1) {
+                continue;
+            }
+
+            int left = intervals[c][0];
+            int right = intervals[c][1];
+
+            for (int i = left; i <= right; i++) {
+                int current = s.charAt(i) - 'a';
+
+                // This character starts before our current interval,
+                // so this interval cannot be valid.
+                if (intervals[current][0] < left) {
+                    left = -1;
+                    break;
                 }
-                
-                if (minLeft == left) {
-                    list.add(new int[]{minLeft, maxRight});
-                }
+
+                right = Math.max(right, intervals[current][1]);
+            }
+
+            if (left != -1) {
+                candidates.add(new int[]{left, right});
             }
         }
-        
-        Collections.sort(list, (a, b) -> a[1] == b[1] ? a[0] - b[0] : a[1] - b[1]);
-        List<String> ret = new ArrayList<>();
+
+        // Choose intervals with the earliest ending position.
+        candidates.sort((a, b) -> Integer.compare(a[1], b[1]));
+
+        List<String> result = new ArrayList<>();
         int prevEnd = -1;
-        if (list.isEmpty()) {
-            ret.add(s);
-        } else {
-            for (int[] interval : list) {
-                if (interval[0] > prevEnd) {
-                    ret.add(s.substring(interval[0], interval[1] + 1));
-                    prevEnd = interval[1];
-                }
+
+        for (int[] interval : candidates) {
+            if (interval[0] > prevEnd) {
+                result.add(s.substring(interval[0], interval[1] + 1));
+                prevEnd = interval[1];
             }
         }
-        
-        
-        return  ret;
+
+        return result;
     }
 }
